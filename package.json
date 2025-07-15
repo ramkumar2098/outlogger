@@ -1,0 +1,46 @@
+{
+  "name": "outlogger",
+  "version": "1.0.0",
+  "main": "index.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node .",
+    "test": "echo \"No tests yet\" && exit 0"
+  },
+  "exports": {
+    "import": "./index.js",
+    "require": "./index.js"
+  },
+  "keywords": [
+    "http",
+    "https",
+    "fetch",
+    "logger",
+    "interceptor",
+    "request-logger",
+    "middleware"
+  ],
+  "author": {
+    "name": "ramkumar",
+    "email": "2098ramkumar@gmail.com",
+    "url": "https://github.com/ramkumar2098"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ramkumar2098/outlogger.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ramkumar2098/outlogger/issues"
+  },
+  "homepage": "https://github.com/ramkumar2098/outlogger#readme",
+  "license": "MIT",
+  "description": "Log outgoing network requests",
+  "engines": {
+    "node": ">=14"
+  },
+  "files": [
+    "index.js",
+    "README.md",
+    "LICENSE"
+  ]
+}

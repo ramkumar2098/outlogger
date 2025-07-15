@@ -1,0 +1,207 @@
+const http = require('http')
+const https = require('https')
+
+let isInitialized = false
+
+const originalHttpRequest = http.request
+const originalHttpsRequest = https.request
+let originalFetch = null
+
+function wrapAndOverrideRequest(module, protocol) {
+  const originalRequest = module.request.bind(module)
+
+  function wrappedRequest(...args) {
+    const [options, moreOptions] = args
+
+    const req = originalRequest(...args)
+
+    const extras = {}
+
+    // URL object does not have method and headers.
+    // for node-fetch and got.
+    if (typeof options == 'string' || options instanceof URL) {
+      if (moreOptions.method) {
+        extras.method = moreOptions.method
+      }
+      if (moreOptions.headers) {
+        extras.headers = moreOptions.headers
+      }
+    }
+
+    logOutgoingRequest(protocol, options, req, extras)
+    return req
+  }
+
+  module.request = wrappedRequest
+}
+
+function logOutgoingRequest(protocol, options, req, extras = {}) {
+  let method = options.method || 'GET'
+  let host = options.hostname || options.host || 'localhost'
+  let path = options.path || '/'
+  let port = options.port ? `:${options.port}` : ''
+  let headers = options.headers || {}
+
+  // for node-fetch and got.
+  if (typeof options == 'string' || options instanceof URL) {
+    const url = new URL(options)
+    method = extras.method || 'GET'
+    host = url.host
+    path = url.pathname + url.search
+    port = url.port
+    headers = extras.headers || {}
+  }
+
+  let logStr = `${method} ${protocol}://${host}${port}${path}`
+
+  if (method != 'GET') {
+    const bodyChunks = []
+
+    const originalWrite = req.write.bind(req)
+    const originalEnd = req.end.bind(req)
+
+    function collectChunk(chunk, encoding) {
+      if (!chunk) return
+
+      bodyChunks.push(
+        Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk, encoding)
+      )
+    }
+
+    req.write = function (chunk, encoding, callback) {
+      collectChunk(chunk, encoding)
+      return originalWrite(chunk, encoding, callback)
+    }
+
+    req.end = function (chunk, encoding, callback) {
+      // for got library.
+      if (typeof chunk == 'function') {
+        callback = chunk
+        chunk = null
+        encoding = null
+      }
+
+      collectChunk(chunk, encoding)
+
+      const body = Buffer.concat(bodyChunks).toString()
+
+      logStr += ` - Body: ${body} - Headers: ${JSON.stringify(headers)}`
+
+      console.log(logStr)
+
+      return originalEnd(chunk, encoding, callback)
+    }
+
+    req.error = function (err) {
+      console.error(`Error in request: ${err.message}`)
+    }
+  } else {
+    console.log(`${logStr} - Headers: ${JSON.stringify(headers)}`)
+  }
+}
+
+function wrapAndOverrideFetch() {
+  if (typeof fetch != 'function') {
+    console.log('Fetch API is not available in this environment.')
+    return
+  }
+
+  if (!originalFetch) originalFetch = fetch
+
+  function wrappedFetch(...args) {
+    logOutgoingFetchRequest(...args)
+    return originalFetch(...args)
+  }
+
+  globalThis.fetch = wrappedFetch
+}
+
+function logOutgoingFetchRequest(resource, options = {}) {
+  let method = options.method?.toUpperCase?.() || 'GET'
+
+  let url
+  let headers = new Headers()
+
+  // normal fetch, fetch + URL object
+  if (typeof resource == 'string' || resource instanceof URL) {
+    url = new URL(resource)
+    // options.headers will be empty for GET requests
+    if (options.headers) {
+      headers = new Headers(options.headers)
+    }
+    // normal fetch + Request object
+  } else if (resource instanceof Request) {
+    method = resource.method?.toUpperCase?.() || 'GET'
+
+    url = new URL(resource.url)
+    headers = new Headers(resource.headers)
+    if (options.headers) {
+      for (const [key, value] of new Headers(options.headers)) {
+        headers.set(key, value)
+      }
+    }
+  }
+
+  let headersObj = {}
+
+  if ([...headers].length > 0) {
+    headersObj = Object.fromEntries(headers.entries())
+  }
+  const path = url.pathname + url.search
+
+  let logStr = `${method} ${url.protocol}//${url.host}${path}`
+
+  // options.body will be undefined when calling fetch with Request object
+  if (method != 'GET' && options.body) {
+    let body = ''
+    if (typeof options.body == 'string') {
+      body = options.body
+    } else if (options.body instanceof FormData) {
+      body = '[FormData]'
+    } else {
+      body = JSON.stringify(options.body)
+    }
+
+    logStr += ` - Body: ${body}`
+  }
+
+  // normal fetch + Request object
+  if (method != 'GET' && resource instanceof Request) {
+    // reading body not supported for Request object
+  }
+
+  logStr += ` - Headers: ${JSON.stringify(headersObj)}`
+
+  console.log(logStr)
+}
+
+function logOutgoingApiCalls() {
+  if (isInitialized) return
+  isInitialized = true
+
+  try {
+    wrapAndOverrideRequest(http, 'http')
+    wrapAndOverrideRequest(https, 'https')
+    wrapAndOverrideFetch()
+  } catch (err) {
+    console.log('Error while initializing')
+  }
+}
+
+function restoreOriginals() {
+  if (!isInitialized) return
+
+  http.request = originalHttpRequest
+  https.request = originalHttpsRequest
+
+  if (originalFetch) {
+    globalThis.fetch = originalFetch
+  }
+
+  isInitialized = false
+}
+
+module.exports = {
+  outlogger: logOutgoingApiCalls,
+  restore: restoreOriginals,
+}
