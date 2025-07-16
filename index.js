@@ -54,7 +54,8 @@ function logOutgoingRequest(protocol, options, req, extras = {}) {
 
   let logStr = `${method} ${protocol}://${host}${port}${path}`
 
-  if (method != 'GET') {
+  // GET and DELETE requests do not have a body.
+  if (method != 'GET' && method != 'DELETE') {
     const bodyChunks = []
 
     const originalWrite = req.write.bind(req)
@@ -151,8 +152,9 @@ function logOutgoingFetchRequest(resource, options = {}) {
 
   let logStr = `${method} ${url.protocol}//${url.host}${path}`
 
+  // GET and DELETE requests do not have a body.
   // options.body will be undefined when calling fetch with Request object
-  if (method != 'GET' && options.body) {
+  if (method != 'GET' && method != 'DELETE' && options.body) {
     let body = ''
     if (typeof options.body == 'string') {
       body = options.body
@@ -165,8 +167,9 @@ function logOutgoingFetchRequest(resource, options = {}) {
     logStr += ` - Body: ${body}`
   }
 
+  // GET and DELETE requests do not have a body.
   // normal fetch + Request object
-  if (method != 'GET' && resource instanceof Request) {
+  if (method != 'GET' && method != 'DELETE' && resource instanceof Request) {
     // reading body not supported for Request object
   }
 
