@@ -7,7 +7,7 @@ const originalHttpRequest = http.request
 const originalHttpsRequest = https.request
 let originalFetch = null
 
-function wrapAndOverrideRequest(module, protocol) {
+function wrapAndOverrideRequest(module, protocol, userOptions) {
   const originalRequest = module.request.bind(module)
 
   function wrappedRequest(...args) {
@@ -28,26 +28,31 @@ function wrapAndOverrideRequest(module, protocol) {
       }
     }
 
-    logOutgoingRequest(protocol, options, req, extras)
+    logOutgoingRequest(protocol, options, req, extras, userOptions)
     return req
   }
 
   module.request = wrappedRequest
 }
 
-function logOutgoingRequest(protocol, options, req, extras = {}) {
+function logOutgoingRequest(protocol, options, req, extras = {}, userOptions) {
   let method = options.method || 'GET'
   let host = options.hostname || options.host || 'localhost'
   let path = options.path || '/'
   let port = options.port ? `:${options.port}` : ''
   let headers = options.headers || {}
 
+  // remove query params from path
+  if (!userOptions.params && path.includes?.('?')) {
+    path = path.split('?')[0]
+  }
+
   // for node-fetch and got.
   if (typeof options == 'string' || options instanceof URL) {
     const url = new URL(options)
     method = extras.method || 'GET'
     host = url.host
-    path = url.pathname + url.search
+    path = url.pathname + (userOptions.params ? url.search : '')
     port = url.port
     headers = extras.headers || {}
   }
@@ -64,9 +69,14 @@ function logOutgoingRequest(protocol, options, req, extras = {}) {
     function collectChunk(chunk, encoding) {
       if (!chunk) return
 
-      bodyChunks.push(
-        Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk, encoding)
-      )
+      // for if someone writes invalid body
+      try {
+        bodyChunks.push(
+          Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk, encoding)
+        )
+      } catch (err) {
+        console.log('Failed to buffer chunk:', err)
+      }
     }
 
     req.write = function (chunk, encoding, callback) {
@@ -101,7 +111,7 @@ function logOutgoingRequest(protocol, options, req, extras = {}) {
   }
 }
 
-function wrapAndOverrideFetch() {
+function wrapAndOverrideFetch(userOptions) {
   if (typeof fetch != 'function') {
     console.log('Fetch API is not available in this environment.')
     return
@@ -110,14 +120,14 @@ function wrapAndOverrideFetch() {
   if (!originalFetch) originalFetch = fetch
 
   function wrappedFetch(...args) {
-    logOutgoingFetchRequest(...args)
+    logOutgoingFetchRequest(userOptions, ...args)
     return originalFetch(...args)
   }
 
   globalThis.fetch = wrappedFetch
 }
 
-function logOutgoingFetchRequest(resource, options = {}) {
+function logOutgoingFetchRequest(userOptions, resource, options = {}) {
   let method = options.method?.toUpperCase?.() || 'GET'
 
   let url
@@ -148,7 +158,7 @@ function logOutgoingFetchRequest(resource, options = {}) {
   if ([...headers].length > 0) {
     headersObj = Object.fromEntries(headers.entries())
   }
-  const path = url.pathname + url.search
+  const path = url.pathname + (userOptions.params ? url.search : '')
 
   let logStr = `${method} ${url.protocol}//${url.host}${path}`
 
@@ -178,14 +188,18 @@ function logOutgoingFetchRequest(resource, options = {}) {
   console.log(logStr)
 }
 
-function logOutgoingApiCalls() {
+function logOutgoingApiCalls(
+  userOptions = {
+    params: false,
+  }
+) {
   if (isInitialized) return
   isInitialized = true
 
   try {
-    wrapAndOverrideRequest(http, 'http')
-    wrapAndOverrideRequest(https, 'https')
-    wrapAndOverrideFetch()
+    wrapAndOverrideRequest(http, 'http', userOptions)
+    wrapAndOverrideRequest(https, 'https', userOptions)
+    wrapAndOverrideFetch(userOptions)
   } catch (err) {
     console.log('Error while initializing')
   }
