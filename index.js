@@ -60,54 +60,55 @@ function logOutgoingRequest(protocol, options, req, extras = {}, userOptions) {
   let logStr = `${method} ${protocol}://${host}${port}${path}`
 
   // GET and DELETE requests do not have a body.
-  if (method != 'GET' && method != 'DELETE') {
-    const bodyChunks = []
-
-    const originalWrite = req.write.bind(req)
-    const originalEnd = req.end.bind(req)
-
-    function collectChunk(chunk, encoding) {
-      if (!chunk) return
-
-      // for if someone writes invalid body
-      try {
-        bodyChunks.push(
-          Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk, encoding)
-        )
-      } catch (err) {
-        console.log('Failed to buffer chunk:', err)
-      }
-    }
-
-    req.write = function (chunk, encoding, callback) {
-      collectChunk(chunk, encoding)
-      return originalWrite(chunk, encoding, callback)
-    }
-
-    req.end = function (chunk, encoding, callback) {
-      // for got library.
-      if (typeof chunk == 'function') {
-        callback = chunk
-        chunk = null
-        encoding = null
-      }
-
-      collectChunk(chunk, encoding)
-
-      const body = Buffer.concat(bodyChunks).toString()
-
-      logStr += ` - Body: ${body} - Headers: ${JSON.stringify(headers)}`
-
-      console.log(logStr)
-
-      return originalEnd(chunk, encoding, callback)
-    }
-
-    req.error = function (err) {
-      console.error(`Error in request: ${err.message}`)
-    }
-  } else {
+  if (method == 'GET' || method == 'DELETE') {
     console.log(`${logStr} - Headers: ${JSON.stringify(headers)}`)
+    return
+  }
+
+  const bodyChunks = []
+
+  const originalWrite = req.write.bind(req)
+  const originalEnd = req.end.bind(req)
+
+  function collectChunk(chunk, encoding) {
+    if (!chunk) return
+
+    // for if someone writes invalid body
+    try {
+      bodyChunks.push(
+        Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk, encoding)
+      )
+    } catch (err) {
+      console.log('Failed to buffer chunk:', err)
+    }
+  }
+
+  req.write = function (chunk, encoding, callback) {
+    collectChunk(chunk, encoding)
+    return originalWrite(chunk, encoding, callback)
+  }
+
+  req.end = function (chunk, encoding, callback) {
+    // for got library.
+    if (typeof chunk == 'function') {
+      callback = chunk
+      chunk = null
+      encoding = null
+    }
+
+    collectChunk(chunk, encoding)
+
+    const body = Buffer.concat(bodyChunks).toString()
+
+    logStr += ` - Body: ${body} - Headers: ${JSON.stringify(headers)}`
+
+    console.log(logStr)
+
+    return originalEnd(chunk, encoding, callback)
+  }
+
+  req.error = function (err) {
+    console.error(`Error in request: ${err.message}`)
   }
 }
 
@@ -163,8 +164,13 @@ function logOutgoingFetchRequest(userOptions, resource, options = {}) {
   let logStr = `${method} ${url.protocol}//${url.host}${path}`
 
   // GET and DELETE requests do not have a body.
+  if (method == 'GET' || method == 'DELETE') {
+    console.log(`${logStr} - Headers: ${JSON.stringify(headers)}`)
+    return
+  }
+
   // options.body will be undefined when calling fetch with Request object
-  if (method != 'GET' && method != 'DELETE' && options.body) {
+  if (options.body) {
     let body = ''
     if (typeof options.body == 'string') {
       body = options.body
@@ -177,15 +183,12 @@ function logOutgoingFetchRequest(userOptions, resource, options = {}) {
     logStr += ` - Body: ${body}`
   }
 
-  // GET and DELETE requests do not have a body.
   // normal fetch + Request object
-  if (method != 'GET' && method != 'DELETE' && resource instanceof Request) {
+  if (resource instanceof Request) {
     // reading body not supported for Request object
   }
 
-  logStr += ` - Headers: ${JSON.stringify(headersObj)}`
-
-  console.log(logStr)
+  console.log(`${logStr} - Headers: ${JSON.stringify(headers)}`)
 }
 
 function logOutgoingApiCalls(
