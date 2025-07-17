@@ -60,8 +60,11 @@ function logOutgoingRequest(protocol, options, req, extras = {}, userOptions) {
   let logStr = `${method} ${protocol}://${host}${port}${path}`
 
   // GET and DELETE requests do not have a body.
-  if (method == 'GET' || method == 'DELETE') {
-    console.log(`${logStr} - Headers: ${JSON.stringify(headers)}`)
+  if (!userOptions.body || method == 'GET' || method == 'DELETE') {
+    if (userOptions.headers) {
+      logStr += ` - Headers: ${JSON.stringify(headers)}`
+    }
+    console.log(logStr)
     return
   }
 
@@ -100,7 +103,11 @@ function logOutgoingRequest(protocol, options, req, extras = {}, userOptions) {
 
     const body = Buffer.concat(bodyChunks).toString()
 
-    logStr += ` - Body: ${body} - Headers: ${JSON.stringify(headers)}`
+    logStr += ` - Body: ${body}`
+
+    if (userOptions.headers) {
+      logStr += ` - Headers: ${JSON.stringify(headers)}`
+    }
 
     console.log(logStr)
 
@@ -164,8 +171,11 @@ function logOutgoingFetchRequest(userOptions, resource, options = {}) {
   let logStr = `${method} ${url.protocol}//${url.host}${path}`
 
   // GET and DELETE requests do not have a body.
-  if (method == 'GET' || method == 'DELETE') {
-    console.log(`${logStr} - Headers: ${JSON.stringify(headers)}`)
+  if (!userOptions.body || method == 'GET' || method == 'DELETE') {
+    if (userOptions.headers) {
+      logStr += ` - Headers: ${JSON.stringify(headers)}`
+    }
+    console.log(logStr)
     return
   }
 
@@ -188,12 +198,18 @@ function logOutgoingFetchRequest(userOptions, resource, options = {}) {
     // reading body not supported for Request object
   }
 
-  console.log(`${logStr} - Headers: ${JSON.stringify(headers)}`)
+  if (userOptions.headers) {
+    logStr += ` - Headers: ${JSON.stringify(headers)}`
+  }
+
+  console.log(logStr)
 }
 
 function logOutgoingApiCalls(
   userOptions = {
     params: false,
+    body: false,
+    headers: false,
   }
 ) {
   if (isInitialized) return
