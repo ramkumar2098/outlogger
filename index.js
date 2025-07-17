@@ -43,7 +43,7 @@ function logOutgoingRequest(protocol, options, req, extras = {}, userOptions) {
   let headers = options.headers || {}
 
   // remove query params from path
-  if (!userOptions.params && path.includes?.('?')) {
+  if (!userOptions.logParams && path.includes?.('?')) {
     path = path.split('?')[0]
   }
 
@@ -52,7 +52,7 @@ function logOutgoingRequest(protocol, options, req, extras = {}, userOptions) {
     const url = new URL(options)
     method = extras.method || 'GET'
     host = url.host
-    path = url.pathname + (userOptions.params ? url.search : '')
+    path = url.pathname + (userOptions.logParams ? url.search : '')
     port = url.port
     headers = extras.headers || {}
   }
@@ -60,8 +60,8 @@ function logOutgoingRequest(protocol, options, req, extras = {}, userOptions) {
   let logStr = `${method} ${protocol}://${host}${port}${path}`
 
   // GET and DELETE requests do not have a body.
-  if (!userOptions.body || method == 'GET' || method == 'DELETE') {
-    if (userOptions.headers) {
+  if (!userOptions.logBody || method == 'GET' || method == 'DELETE') {
+    if (userOptions.logHeaders) {
       logStr += ` - Headers: ${JSON.stringify(headers)}`
     }
     console.log(logStr)
@@ -105,7 +105,7 @@ function logOutgoingRequest(protocol, options, req, extras = {}, userOptions) {
 
     logStr += ` - Body: ${body}`
 
-    if (userOptions.headers) {
+    if (userOptions.logHeaders) {
       logStr += ` - Headers: ${JSON.stringify(headers)}`
     }
 
@@ -163,13 +163,13 @@ function logOutgoingFetchRequest(userOptions, resource, options = {}) {
 
   const headersObj = Object.fromEntries(headers.entries())
 
-  const path = url.pathname + (userOptions.params ? url.search : '')
+  const path = url.pathname + (userOptions.logParams ? url.search : '')
 
   let logStr = `${method} ${url.protocol}//${url.host}${path}`
 
   // GET and DELETE requests do not have a body.
-  if (!userOptions.body || method == 'GET' || method == 'DELETE') {
-    if (userOptions.headers) {
+  if (!userOptions.logBody || method == 'GET' || method == 'DELETE') {
+    if (userOptions.logHeaders) {
       logStr += ` - Headers: ${JSON.stringify(headersObj)}`
     }
     console.log(logStr)
@@ -195,7 +195,7 @@ function logOutgoingFetchRequest(userOptions, resource, options = {}) {
     // reading body not supported for Request object
   }
 
-  if (userOptions.headers) {
+  if (userOptions.logHeaders) {
     logStr += ` - Headers: ${JSON.stringify(headersObj)}`
   }
 
@@ -203,7 +203,7 @@ function logOutgoingFetchRequest(userOptions, resource, options = {}) {
 }
 
 function logOutgoingApiCalls(
-  userOptions = {
+  options = {
     params: false,
     body: false,
     headers: false,
@@ -211,6 +211,12 @@ function logOutgoingApiCalls(
 ) {
   if (isInitialized) return
   isInitialized = true
+
+  const userOptions = {
+    logParams: options.params,
+    logBody: options.body,
+    logHeaders: options.headers,
+  }
 
   try {
     wrapAndOverrideRequest(http, 'http', userOptions)
