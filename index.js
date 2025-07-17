@@ -114,9 +114,9 @@ function logOutgoingRequest(protocol, options, req, extras = {}, userOptions) {
     return originalEnd(chunk, encoding, callback)
   }
 
-  req.error = function (err) {
+  req.on('error', err => {
     console.error(`Error in request: ${err.message}`)
-  }
+  })
 }
 
 function wrapAndOverrideFetch(userOptions) {
@@ -184,7 +184,11 @@ function logOutgoingFetchRequest(userOptions, resource, options = {}) {
     } else if (options.body instanceof FormData) {
       body = '[FormData]'
     } else {
-      body = JSON.stringify(options.body)
+      try {
+        body = JSON.stringify(options.body)
+      } catch {
+        body = '[Unserializable body]'
+      }
     }
 
     logStr += ` - Body: ${body}`
