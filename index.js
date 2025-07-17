@@ -206,20 +206,19 @@ function logOutgoingFetchRequest(userOptions, resource, options = {}) {
   console.log(logStr)
 }
 
-function logOutgoingApiCalls(
-  options = {
-    params: false,
-    body: false,
-    headers: false,
-  }
-) {
+function logOutgoingApiCalls({
+  params = false,
+  body = false,
+  headers = false,
+  verbose = false,
+} = {}) {
   if (isInitialized) return
   isInitialized = true
 
   const userOptions = {
-    logParams: options.params,
-    logBody: options.body,
-    logHeaders: options.headers,
+    logParams: verbose || params,
+    logBody: verbose || body,
+    logHeaders: verbose || headers,
   }
 
   try {
