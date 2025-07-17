@@ -161,11 +161,6 @@ function logOutgoingFetchRequest(userOptions, resource, options = {}) {
     }
   }
 
-  let headersObj = {}
-
-  if ([...headers].length > 0) {
-    headersObj = Object.fromEntries(headers.entries())
-  }
   const path = url.pathname + (userOptions.params ? url.search : '')
 
   let logStr = `${method} ${url.protocol}//${url.host}${path}`
@@ -173,7 +168,9 @@ function logOutgoingFetchRequest(userOptions, resource, options = {}) {
   // GET and DELETE requests do not have a body.
   if (!userOptions.body || method == 'GET' || method == 'DELETE') {
     if (userOptions.headers) {
-      logStr += ` - Headers: ${JSON.stringify(headers)}`
+      logStr += ` - Headers: ${JSON.stringify(
+        Object.fromEntries(headers.entries())
+      )}`
     }
     console.log(logStr)
     return
@@ -199,7 +196,9 @@ function logOutgoingFetchRequest(userOptions, resource, options = {}) {
   }
 
   if (userOptions.headers) {
-    logStr += ` - Headers: ${JSON.stringify(headers)}`
+    logStr += ` - Headers: ${JSON.stringify(
+      Object.fromEntries(headers.entries())
+    )}`
   }
 
   console.log(logStr)
