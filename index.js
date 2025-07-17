@@ -207,12 +207,13 @@ function logOutgoingFetchRequest(userOptions, resource, options = {}) {
 }
 
 function logOutgoingApiCalls({
+  enable = true,
   params = false,
   body = false,
   headers = false,
   verbose = false,
 } = {}) {
-  if (isInitialized) return
+  if (isInitialized || !enable) return
   isInitialized = true
 
   const userOptions = {
