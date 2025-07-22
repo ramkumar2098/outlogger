@@ -103,7 +103,13 @@ function logOutgoingRequest(protocol, options, req, extras = {}, userOptions) {
 
     const body = Buffer.concat(bodyChunks).toString()
 
-    logStr += ` - Body: ${body}`
+    try {
+      const payloadObject = JSON.parse(body) // parse pretty JSON string
+      const minifiedJSON = JSON.stringify(payloadObject) // convert to minified JSON
+      logStr += ` - Body: ${minifiedJSON}`
+    } catch (err) {
+      logStr += ` - Body: ${body}` // fallback if not valid JSON
+    }
 
     if (userOptions.logHeaders) {
       logStr += ` - Headers: ${JSON.stringify(headers)}`
