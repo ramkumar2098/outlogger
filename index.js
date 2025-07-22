@@ -188,7 +188,9 @@ function logOutgoingFetchRequest(userOptions, resource, options = {}) {
     if (typeof options.body == 'string') {
       body = options.body
     } else if (options.body instanceof FormData) {
-      body = '[FormData]'
+      const bodyObj = Object.fromEntries(options.body.entries())
+
+      body = JSON.stringify(bodyObj)
     } else {
       try {
         body = JSON.stringify(options.body)
