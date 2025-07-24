@@ -126,9 +126,7 @@ function logOutgoingRequest(protocol, options, req, extras = {}, userOptions) {
 }
 
 function wrapAndOverrideFetch(userOptions) {
-  if (typeof fetch != 'function') {
-    return
-  }
+  if (typeof fetch != 'function') return
 
   if (!originalFetch) originalFetch = fetch
 
@@ -235,7 +233,13 @@ function logOutgoingApiCalls({
   headers = false,
   verbose = false,
 } = {}) {
-  if (isInitialized || !enable) return
+  if (!enable) return
+
+  if (isInitialized) {
+    console.warn('[outlogger]', 'Already initialized')
+    return
+  }
+
   isInitialized = true
 
   const userOptions = {
@@ -264,6 +268,7 @@ function restoreOriginals() {
 
   if (originalFetch) {
     globalThis.fetch = originalFetch
+    originalFetch = null
   }
 
   isInitialized = false
