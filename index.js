@@ -82,7 +82,7 @@ function logOutgoingRequest(protocol, options, req, extras = {}, userOptions) {
         Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk, encoding)
       )
     } catch (err) {
-      console.log('Failed to buffer chunk:', err)
+      console.error('[outlogger]', 'Failed to buffer chunk', err)
     }
   }
 
@@ -121,13 +121,12 @@ function logOutgoingRequest(protocol, options, req, extras = {}, userOptions) {
   }
 
   req.on('error', err => {
-    console.error(`Error in request: ${err.message}`)
+    console.error('[outlogger]', 'Error in request', err)
   })
 }
 
 function wrapAndOverrideFetch(userOptions) {
   if (typeof fetch != 'function') {
-    console.log('Fetch API is not available in this environment.')
     return
   }
 
@@ -250,7 +249,7 @@ function logOutgoingApiCalls({
     wrapAndOverrideRequest(https, 'https', userOptions)
     wrapAndOverrideFetch(userOptions)
   } catch (err) {
-    console.log('Error while initializing')
+    console.error('[outlogger]', 'Error while initializing', err)
   }
 }
 
