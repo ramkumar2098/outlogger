@@ -1,8 +1,8 @@
 # Outlogger
 
-A lightweight Node.js library to intercept and log all outgoing `http`, `https`, and `fetch` requests—including those made by popular libraries like Axios, node-fetch, got, and request.
+Log outgoing network requests.
 
-Think of it as "morgan" for outgoing requests.
+A lightweight Node.js library to intercept and log all outgoing `http`, `https`, and `fetch` requests. Works with popular libraries like Axios, node-fetch, got, and request.
 
 > **Note:** This library monkey-patches core modules. Use with caution in production environments.
 
@@ -24,20 +24,29 @@ npm install outlogger
 ## Usage
 
 ```js
+const axios = require('axios')
 const { outlogger, restore } = require('outlogger')
 
 // Start logging outgoing requests
 outlogger({
-  verbose: true, // logs method, URL, headers, and body
+  verbose: true, // logs params, body, and headers
   // params: true, // log query params
   // body: true,   // log request body
   // headers: true // log headers
 })
 
-// Make requests with axios, fetch, http, or https...
+// Make requests with axios, fetch, http, or http...
+await axios.get('https://jsonplaceholder.typicode.com/posts/1')
 
-// Stop logging and restore original functions
-restore()
+// Optionally, stop logging and restore original functions
+// Call restore() if you want to revert monkey-patching
+// restore()
+```
+
+## Output
+
+```bash
+GET https://jsonplaceholder.typicode.com/posts/1 - Headers: {"Accept":"application/json, text/plain, */*","User-Agent":"axios/1.11.0","Accept-Encoding":"gzip, compress, deflate, br"}
 ```
 
 ## Features
