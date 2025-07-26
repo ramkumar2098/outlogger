@@ -1,5 +1,5 @@
-const http = require('http')
-const https = require('https')
+import http from 'http'
+import https from 'https'
 
 let isInitialized = false
 
@@ -211,21 +211,6 @@ function logOutgoingFetchRequest(userOptions, resource, options = {}) {
   console.log(logStr)
 }
 
-/**
- * @typedef {Object} LogOptions
- * @property {boolean} [enable=true] Enable or disable logging.
- * @property {boolean} [params=false] Include query parameters in the log.
- * @property {boolean} [body=false] Include request body in the log.
- * @property {boolean} [headers=false] Include headers in the log.
- * @property {boolean} [verbose=false] Enable all logging: params, body, and headers.
- */
-
-/**
- * Monkey-patches HTTP, HTTPS, and fetch to log outgoing requests.
- * Call this once to start logging.
- *
- * @param {LogOptions} [options]
- */
 function logOutgoingApiCalls({
   enable = true,
   params = false,
@@ -257,9 +242,6 @@ function logOutgoingApiCalls({
   }
 }
 
-/**
- * Restores the original HTTP, HTTPS, and fetch methods.
- */
 function restoreOriginals() {
   if (!isInitialized) return
 
@@ -274,7 +256,5 @@ function restoreOriginals() {
   isInitialized = false
 }
 
-module.exports = {
-  outlogger: logOutgoingApiCalls,
-  restore: restoreOriginals,
-}
+export const outlogger = logOutgoingApiCalls
+export const restore = restoreOriginals

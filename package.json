@@ -1,15 +1,21 @@
 {
   "name": "outlogger",
-  "version": "1.0.0",
-  "main": "index.js",
-  "type": "commonjs",
+  "version": "1.1.0",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
   "scripts": {
     "start": "node .",
+    "build": "rollup -c",
     "test": "echo \"No tests yet\" && exit 0"
   },
   "exports": {
-    "import": "./index.js",
-    "require": "./index.js"
+    ".": {
+      "require": "./dist/index.cjs",
+      "import": "./dist/index.mjs",
+      "types": "./dist/index.d.ts"
+    }
   },
   "keywords": [
     "http",
@@ -39,8 +45,16 @@
     "node": ">=14"
   },
   "files": [
-    "index.js",
+    "dist",
     "README.md",
     "LICENSE"
-  ]
+  ],
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^28.0.6",
+    "@rollup/plugin-node-resolve": "^16.0.1",
+    "@types/node": "^24.1.0",
+    "rollup": "^4.45.1",
+    "rollup-plugin-dts": "^6.2.1",
+    "typescript": "^5.8.3"
+  }
 }
