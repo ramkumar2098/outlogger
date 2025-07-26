@@ -8,7 +8,7 @@
   "scripts": {
     "clean": "rm -rf dist",
     "build": "npm run clean && rollup -c",
-    "prepare": "npm run build",
+    "prepublishOnly": "npm run build",
     "test": "echo \"No tests yet\" && exit 0"
   },
   "exports": {
